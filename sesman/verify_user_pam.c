@@ -57,8 +57,10 @@ verify_pam_conv(int num_msg, const struct pam_message **msg,
     int i;
     struct pam_response *reply;
     struct t_user_pass *user_pass;
+    int password_responded;
 
     reply = g_new0(struct pam_response, num_msg);
+    password_responded = 0;
 
     for (i = 0; i < num_msg; i++)
     {
@@ -70,8 +72,16 @@ verify_pam_conv(int num_msg, const struct pam_message **msg,
                 reply[i].resp_retcode = PAM_SUCCESS;
                 break;
             case PAM_PROMPT_ECHO_OFF: /* password */
-                user_pass = (struct t_user_pass *) appdata_ptr;
-                reply[i].resp = g_strdup(user_pass->pass);
+                if (password_responded == 0)
+                {
+                    user_pass = (struct t_user_pass *) appdata_ptr;
+                    reply[i].resp = g_strdup(user_pass->pass);                    
+                    password_responded = 1;
+                }
+                else
+                {
+                    reply[i].resp = NULL;
+                }
                 reply[i].resp_retcode = PAM_SUCCESS;
                 break;
             default:
